@@ -8,3 +8,5 @@ Basado en la skill /sdd
 
 
 ## Testing new git pull rules
+
+## New testing git pull rules, now with the project visibility on public
