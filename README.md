@@ -4,9 +4,22 @@ Es una plataforma para jugar online y competir por la mayor cantidad de puntos.
 
 ## Usa Spec Driven Design
 
-Basado en la skill /sdd
+Basado en /spec y /spec-impl
 
+Siguiendo las buenas practicas recomendadas aquí:
+https://github.com/Klerith/fernando-skills
 
-## Testing new git pull rules
+## Skills usadas
 
-## New testing git pull rules, now with the project visibility on public
+```bash
+npx skills@latest add Klerith/fernando-skills
+```
+
+## Commands
+
+```bash
+npm run dev      # start dev server (port 3000)
+npm run build    # production build
+npm run start    # serve production build
+npm run lint     # ESLint (Next.js config)
+```
