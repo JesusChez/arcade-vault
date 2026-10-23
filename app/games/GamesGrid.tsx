@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState } from 'react';
-import type { GameRow } from '@/lib/supabase/types';
+import type { Game } from '@/app/data/games';
 
 const CATS = ['TODOS', 'ARCADE', 'PUZZLE', 'SHOOTER'] as const;
 type Cat = (typeof CATS)[number];
 
-function GameCard({ game }: { game: GameRow }) {
+function GameCard({ game }: { game: Game }) {
   const ref = useRef<HTMLDivElement>(null);
 
   function onMove(e: React.MouseEvent) {
@@ -57,7 +57,7 @@ function GameCard({ game }: { game: GameRow }) {
   );
 }
 
-export default function GamesGrid({ games }: { games: GameRow[] }) {
+export default function GamesGrid({ games }: { games: Game[] }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<Cat>('TODOS');
 

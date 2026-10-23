@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 
 type FormState = { name: string; email: string; msg: string };
-type Status = 'idle' | 'sending' | 'success' | 'error';
+type Status = 'idle' | 'sending' | 'success';
+
+// No backend: the send is simulated so the success animation still plays.
+const FAKE_SEND_MS = 1200;
 
 const HeartSVG = (
   <svg
@@ -133,7 +136,6 @@ export default function AboutPage() {
   const [form, setForm] = useState<FormState>({ name: '', email: '', msg: '' });
   const [status, setStatus] = useState<Status>('idle');
   const [shake, setShake] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>('.reveal');
@@ -160,29 +162,13 @@ export default function AboutPage() {
       return;
     }
     setStatus('sending');
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setStatus('success');
-      } else {
-        setErrorMsg(data.error ?? 'Error al enviar.');
-        setStatus('error');
-      }
-    } catch {
-      setErrorMsg('Error de red. Intenta de nuevo.');
-      setStatus('error');
-    }
+    await new Promise((resolve) => setTimeout(resolve, FAKE_SEND_MS));
+    setStatus('success');
   }
 
   function reset() {
     setForm({ name: '', email: '', msg: '' });
     setStatus('idle');
-    setErrorMsg('');
   }
 
   return (
@@ -291,9 +277,6 @@ export default function AboutPage() {
                   onChange={(e) => setForm({ ...form, msg: e.target.value })}
                 />
               </div>
-              {status === 'error' && (
-                <p className="form-err pixel">⚠ {errorMsg}</p>
-              )}
               <button
                 type="submit"
                 className="btn xl press"

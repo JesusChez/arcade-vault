@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
 import { useUser } from '@/app/context/UserContext';
-import { createClient } from '@/lib/supabase/client';
+import { addScore } from '@/app/data/scores';
 
 const AsteroidsGame = dynamic(
   () => import('@/components/games/AsteroidsGame'),
@@ -145,16 +145,10 @@ export default function AsteroidsPlay() {
                 />
                 <button
                   className="btn yellow"
-                  onClick={async () => {
+                  onClick={() => {
                     setSaved(true);
                     localStorage.setItem('av_player_name', name);
-                    const supabase = createClient();
-                    await supabase.from('scores').insert({
-                      game_id: 'asteroids',
-                      player_name: name,
-                      score,
-                      user_id: null,
-                    });
+                    addScore('asteroids', name, score);
                   }}
                 >
                   GUARDAR PUNTUACIÓN

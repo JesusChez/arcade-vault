@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { addScore } from '@/app/data/scores';
 
 const ArkanoidGame = dynamic(() => import('@/components/games/ArkanoidGame'), {
   ssr: false,
@@ -141,16 +141,10 @@ export default function ArkanoidPlay() {
                 />
                 <button
                   className="btn yellow"
-                  onClick={async () => {
+                  onClick={() => {
                     setSaved(true);
                     localStorage.setItem('av_player_name', name);
-                    const supabase = createClient();
-                    await supabase.from('scores').insert({
-                      game_id: 'arkanoid',
-                      player_name: name,
-                      score,
-                      user_id: null,
-                    });
+                    addScore('arkanoid', name, score);
                   }}
                 >
                   GUARDAR PUNTUACIÓN

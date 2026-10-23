@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { addScore } from '@/app/data/scores';
 
 const TetrisGame = dynamic(() => import('@/components/games/TetrisGame'), {
   ssr: false,
@@ -188,16 +188,10 @@ export default function TetrisPlay() {
                 />
                 <button
                   className="btn yellow"
-                  onClick={async () => {
+                  onClick={() => {
                     setSaved(true);
                     localStorage.setItem('av_player_name', name);
-                    const supabase = createClient();
-                    await supabase.from('scores').insert({
-                      game_id: 'tetris',
-                      player_name: name,
-                      score,
-                      user_id: null,
-                    });
+                    addScore('tetris', name, score);
                   }}
                 >
                   GUARDAR PUNTUACIÓN

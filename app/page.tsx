@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
-import type { GameRow } from '@/lib/supabase/types';
+import { GAMES, type Game } from '@/app/data/games';
 import RevealObserver from './RevealObserver';
 
 const SCORES = [
@@ -201,7 +200,7 @@ function FeatureIcon({ kind }: { kind: string }) {
   return null;
 }
 
-function MiniCard({ game }: { game: GameRow }) {
+function MiniCard({ game }: { game: Game }) {
   return (
     <Link href={`/games/${game.id}`} className="mini-card">
       <div className="mini-cover">
@@ -215,14 +214,8 @@ function MiniCard({ game }: { game: GameRow }) {
   );
 }
 
-export default async function HomePage() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('games')
-    .select('*')
-    .order('created_at', { ascending: true })
-    .limit(6);
-  const games = (data as GameRow[]) ?? [];
+export default function HomePage() {
+  const games = GAMES.slice(0, 6);
 
   return (
     <div className="home fade-in">

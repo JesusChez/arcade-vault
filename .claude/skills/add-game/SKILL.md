@@ -1,15 +1,15 @@
 ---
 name: add-game
-description: Genera un spec para añadir un nuevo juego canvas a Arcade Vault (componente React, play-page, fila en tabla games de Supabase y wiring del modal de leaderboard). Acepta una carpeta de references/started-games/ o una descripción libre del juego. No escribe código; solo produce specs/NN-<slug>-game.md.
+description: Genera un spec para añadir un nuevo juego canvas a Arcade Vault (componente React, play-page, entrada en el catálogo local `app/data/games.ts` y wiring del modal de leaderboard). Acepta una carpeta de references/started-games/ o una descripción libre del juego. No escribe código; solo produce specs/NN-<slug>-game.md.
 disable-model-invocation: true
 argument-hint: '<carpeta references/started-games/NN-name> o <descripción corta del juego>'
 ---
 
 # /add-game — Generador de spec para nuevo juego
 
-Este skill produce un spec siguiendo el patrón consolidado de `specs/05-asteroids-game.md` + `specs/06-games-table-leaderboard-supabase.md`. **No escribe código.** Solo genera el `.md` del spec que luego se ejecuta con `/spec-impl`.
+Este skill produce un spec siguiendo el patrón consolidado de `specs/05-asteroids-game.md` y los specs de juego posteriores (07–09). **No escribe código.** Solo genera el `.md` del spec que luego se ejecuta con `/spec-impl`.
 
-Asume que el spec 06 ya está implementado: las tablas `games` y `scores` existen en Supabase, `lib/supabase/types.ts` exporta `GameRow` y `ScoreRow`, y las rutas `/games`, `/games/[id]`, `/games/[id]/play` y `/hall-of-fame` ya consumen esas tablas dinámicamente.
+El proyecto no tiene backend: el catálogo de juegos es el array `GAMES` de `app/data/games.ts` (tipo `Game`) y las puntuaciones viven en `app/data/scores.ts` (tipo `Score`, seed en código + `localStorage` del navegador, con `addScore` y `useLeaderboard`). Las rutas `/`, `/games`, `/games/[id]` y `/hall-of-fame` leen de esos módulos. Los specs 04 y 06 (Supabase) son historial y ya no describen el sistema actual.
 
 Tus respuestas deben estar siempre en el **mismo idioma que el prompt inicial** (si el usuario escribe en español, responde en español).
 
@@ -32,7 +32,7 @@ Antes de preguntar nada, recoge contexto:
    de este skill).
 4. Listar `specs/` para determinar el número `NN` del próximo spec (el mayor número existente + 1).
 5. Leer los dos specs más recientes para mantener convención de idioma, formato y nivel de detalle.
-6. Verificar que `lib/supabase/types.ts` exporta `GameRow` y `ScoreRow`. Si no existen, abortar y pedir al usuario que implemente primero el spec 06 (`06-games-table-leaderboard-supabase`).
+6. Verificar que `app/data/games.ts` exporta `Game` y `GAMES`, y que `app/data/scores.ts` exporta `addScore` y `useLeaderboard`. Si no existen, abortar y avisar al usuario.
 7. Verificar que `components/games/AsteroidsGame.tsx` existe — te sirve como referencia de patrón del componente canvas.
 
 ---
@@ -64,7 +64,7 @@ Haz preguntas en bloques de 3-5. Espera respuesta antes de avanzar al siguiente 
 
 ### Bloque A — Identidad del juego
 
-1. **ID / slug** — será la PK en la tabla `games` y el segmento de URL (ej. `tetris`, `arkanoid`). Propón uno basado en `$ARGUMENTS` si puedes.
+1. **ID / slug** — será el `id` en `GAMES` y el segmento de URL (ej. `tetris`, `arkanoid`). Propón uno basado en `$ARGUMENTS` si puedes.
 2. **Title** — nombre en mayúsculas para mostrar en la UI (ej. `TETRIS`).
 3. **short** — una línea sensorial, máx. 50 caracteres (ej. "Apila tetrominos antes de que el techo te aplaste.").
 4. **long** — 2-3 frases para la página de detalle.
@@ -86,7 +86,7 @@ Estos tres puntos tienen respuestas por defecto que el usuario puede cambiar:
 
 1. **¿Se guarda el score al terminar?** — sí por defecto. Si no, el spec omite el modal de guardado.
 2. **Top N del leaderboard** — 10 por defecto (como Asteroids).
-3. **¿Aparece tab en `/hall-of-fame`?** — sí automáticamente por estar en `games`; mencionarlo como info, no como pregunta.
+3. **¿Aparece tab en `/hall-of-fame`?** — sí automáticamente por estar en `GAMES`; mencionarlo como info, no como pregunta.
 
 ### Bloque D — Adaptación canvas → React (solo si Caso A)
 
@@ -104,7 +104,7 @@ Orden obligatorio:
 
 1. **Header** — bloqueo de metadatos + objetivo en una sola frase.
 2. **Scope** — In y Fuera de alcance. El "Fuera" debe incluir explícitamente las exclusiones estándar.
-3. **Data model** — INSERT SQL listo para copiar + interfaz TypeScript de props del componente.
+3. **Data model** — entrada `Game` para `GAMES` lista para copiar + interfaz TypeScript de props del componente.
 4. **Implementation plan** — 4 pasos numerados, cada uno dejando el sistema funcional.
 5. **Acceptance criteria** — checklist booleano.
 6. **Decisions** — Sí/No con razón breve.
@@ -134,6 +134,6 @@ Cuando todas las secciones estén confirmadas:
 - **Nunca escribir código durante este skill.** Solo el archivo `.md` del spec al final.
 - **Nunca asumir decisiones que el usuario no confirmó.** Si falta información, preguntar.
 - **Nunca generar el spec completo de un golpe.** Sección por sección, con confirmación.
-- **Si `GameRow` o `ScoreRow` no existen en `lib/supabase/types.ts`**, detener y pedir que se implemente el spec 06 primero.
-- **Si el juego ya existe** — si hay una carpeta `app/games/<id>/` o una fila `<id>` conocida en `games`, avisar al usuario antes de continuar.
-- **El spec que produces no incluye pasos para crear las tablas `games` o `scores`** — ya existen. Solo incluye el INSERT de la fila nueva.
+- **Si `Game`/`GAMES` o `addScore`/`useLeaderboard` no existen en `app/data/`**, detener y avisar al usuario.
+- **Si el juego ya existe** — si hay una carpeta `app/games/<id>/` o una entrada `<id>` en `GAMES`, avisar al usuario antes de continuar.
+- **Sin backend.** El spec que produces no introduce bases de datos, APIs ni servicios externos. Solo añade la entrada del juego a `GAMES` y, opcionalmente, puntuaciones de ejemplo al seed de `app/data/scores.ts`.

@@ -1,14 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import type { GameRow, ScoreRow } from '@/lib/supabase/types';
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-}
+import { useState } from 'react';
+import type { Game } from '@/app/data/games';
+import { formatScoreDate as formatDate, useLeaderboard } from '@/app/data/scores';
 
 function EmptyState() {
   return (
@@ -34,30 +29,13 @@ function EmptyState() {
 
 export default function HallOfFameClient({
   games,
-  initialScores,
   initialTab,
 }: {
-  games: GameRow[];
-  initialScores: ScoreRow[];
+  games: Game[];
   initialTab: string;
 }) {
   const [tab, setTab] = useState(initialTab);
-  const [scores, setScores] = useState(initialScores);
-  const [isPending, startTransition] = useTransition();
-
-  async function changeTab(gameId: string) {
-    setTab(gameId);
-    startTransition(async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('scores')
-        .select('*')
-        .eq('game_id', gameId)
-        .order('score', { ascending: false })
-        .limit(12);
-      setScores((data as ScoreRow[]) ?? []);
-    });
-  }
+  const scores = useLeaderboard(tab, 12);
 
   return (
     <div className="av-hall fade-in">
@@ -73,29 +51,14 @@ export default function HallOfFameClient({
           <button
             key={g.id}
             className={`chip${tab === g.id ? ' active' : ''}`}
-            onClick={() => changeTab(g.id)}
+            onClick={() => setTab(g.id)}
           >
             {g.title}
           </button>
         ))}
       </div>
 
-      {isPending ? (
-        <div
-          style={{
-            padding: '80px 0',
-            textAlign: 'center',
-            color: 'var(--ink-faint)',
-          }}
-        >
-          <div
-            className="pixel"
-            style={{ fontSize: 12, letterSpacing: '0.2em' }}
-          >
-            CARGANDO<span className="blink">_</span>
-          </div>
-        </div>
-      ) : scores.length === 0 ? (
+      {scores.length === 0 ? (
         <EmptyState />
       ) : (
         <>

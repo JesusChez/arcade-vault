@@ -31,9 +31,9 @@ Placeholders disponibles:
 # SPEC {{NN}} — Integración del juego {{TITLE}}
 
 > **Estado:** Borrador
-> **Depende de:** 06-games-table-leaderboard-supabase
+> **Depende de:** 05-asteroids-game
 > **Fecha:** YYYY-MM-DD
-> **Objetivo:** Integrar {{TITLE}} como juego jugable en Arcade Vault, adaptando su canvas a React y conectando el leaderboard de Supabase.
+> **Objetivo:** Integrar {{TITLE}} como juego jugable en Arcade Vault, adaptando su canvas a React y conectando el leaderboard local.
 ```
 
 ---
@@ -45,26 +45,23 @@ Placeholders disponibles:
 
 **In:**
 
-- Insertar la fila `{{ID}}` en la tabla `games` de Supabase (seed manual via SQL).
+- Añadir la entrada `{{ID}}` al array `GAMES` de `app/data/games.ts`.
 - Crear `components/games/{{COMPONENT_NAME}}.tsx` — componente React que encapsula el canvas
   y el game loop. Acepta props: `paused`, `onScoreChange`, {{HUD_CALLBACKS}}`onGameOver`.
 - Crear `app/games/{{ID}}/play/page.tsx` — play-page específica para este juego.
   Gestiona el estado ({{HUD_FIELDS}}, pausa, game over) y pasa callbacks al componente canvas.
 - Wiring del modal de game over: pre-rellenar nombre desde `localStorage.getItem('av_player_name')`;
-  al confirmar, guardar nombre en localStorage e insertar score en la tabla `scores` vía cliente browser.
+  al confirmar, guardar nombre en localStorage y registrar el score con `addScore` de `app/data/scores.ts`.
 - Botón de pausa de la plataforma pasa el flag `paused` al componente canvas, que congela el game loop.
 - Eliminar únicamente el overlay "GAME OVER" del canvas — el modal React de la plataforma lo reemplaza.
   El HUD interno del canvas ({{HUD_FIELDS}}) se conserva intacto.
 
 **Fuera de alcance:**
 
-- Crear las tablas `games` o `scores` en Supabase — ya existen (spec 06).
-- Supabase Auth — `user_id` se almacena como `null` en todos los scores.
-- RLS (Row Level Security) — se configura en un spec futuro de seguridad.
-- Realtime — el leaderboard no se actualiza en vivo; solo al cargar la página.
+- Backend, base de datos o APIs — las puntuaciones solo se guardan en el `localStorage` del navegador.
+- Ranking compartido entre jugadores — cada navegador ve el seed más sus propias partidas.
 - Paginación del leaderboard — se muestran los top {{TOP_N}} fijos.
 - Controles táctiles o mobile.
-- Actualización automática de `best` y `plays` en la tabla `games` — campos estáticos.
 ```
 
 ---
@@ -74,17 +71,18 @@ Placeholders disponibles:
 ```markdown
 ## Data model
 
-### Seed en Supabase — tabla `games`
+### Entrada en `GAMES` — `app/data/games.ts`
 
-Ejecutar en el SQL Editor de Supabase:
-
-\`\`\`sql
-INSERT INTO games (id, title, short, long, cat, cover, color)
-VALUES (
-'{{ID}}', '{{TITLE}}', '{{SHORT}}',
-'{{LONG}}',
-'{{CAT}}', '{{COVER}}', '{{COLOR}}'
-);
+\`\`\`ts
+{
+id: '{{ID}}',
+title: '{{TITLE}}',
+short: '{{SHORT}}',
+long: '{{LONG}}',
+cat: '{{CAT}}',
+cover: '{{COVER}}',
+color: '{{COLOR}}',
+},
 \`\`\`
 
 ### Props del componente `{{COMPONENT_NAME}}`
@@ -100,8 +98,8 @@ onGameOver: (finalScore: number) => void;
 }
 \`\`\`
 
-No se introducen nuevas tablas ni tipos TypeScript — se reutilizan `GameRow` y `ScoreRow`
-de `lib/supabase/types.ts`.
+No se introducen nuevos tipos TypeScript — se reutilizan `Game` (`app/data/games.ts`)
+y `Score` (`app/data/scores.ts`).
 ```
 
 ---
@@ -111,7 +109,7 @@ de `lib/supabase/types.ts`.
 ```markdown
 ## Implementation plan
 
-1. **Seed en Supabase** — ejecutar el INSERT de la fila `{{ID}}` en el SQL Editor de Supabase.
+1. **Catálogo** — añadir la entrada `{{ID}}` al final de `GAMES` en `app/data/games.ts`.
    Verificación: la card de {{TITLE}} aparece en `/games`.
 
 2. **Crear `components/games/{{COMPONENT_NAME}}.tsx`** — componente `"use client"` que:
@@ -131,13 +129,13 @@ de `lib/supabase/types.ts`.
    - Estado local: `score`, {{HUD_STATE_VARS}}, `paused`, `over`, `name`, `saved`, `gameKey`.
    - Al montar el modal de game over (`over === true`), lee `localStorage.getItem('av_player_name')`
      y pre-rellena el campo `name`.
-   - Al confirmar, persiste el nombre en `av_player_name` e inserta en `scores`:
-     `{ game_id: '{{ID}}', player_name: name, score, user_id: null }`.
+   - Al confirmar, persiste el nombre en `av_player_name` y llama a
+     `addScore('{{ID}}', name, score)`.
    - Marca `saved: true` para deshabilitar el botón y evitar doble inserción.
    - Reutiliza el mismo layout visual (HUD React + CRT + modal game over) que
      `app/games/asteroids/play/page.tsx`.
      Verificación: el HUD React muestra los valores en tiempo real; tras una partida el score
-     aparece en `/games/{{ID}}` y en `/hall-of-fame` al recargar.
+     aparece en `/games/{{ID}}` y en `/hall-of-fame`.
 
 4. **Verificación final** — `npm run build` completa sin errores de TypeScript.
    Ninguna ruta existente devuelve 500.
@@ -161,9 +159,9 @@ de `lib/supabase/types.ts`.
 - [ ] El overlay "GAME OVER" del canvas ya no se dibuja (el modal React lo reemplaza).
 - [ ] El botón "JUGAR DE NUEVO" reinicia la partida desde cero.
 - [ ] Al abrir el modal, el campo de nombre se pre-rellena con `av_player_name` de localStorage si existe.
-- [ ] Al confirmar, el score se inserta en Supabase y el nombre se persiste en localStorage.
+- [ ] Al confirmar, el score se guarda con `addScore` y el nombre se persiste en localStorage.
 - [ ] El botón "GUARDAR PUNTUACIÓN" se deshabilita tras el primer envío (sin doble inserción).
-- [ ] El score guardado aparece en `/games/{{ID}}` y en `/hall-of-fame` al recargar.
+- [ ] El score guardado aparece en `/games/{{ID}}` y en `/hall-of-fame`.
 - [ ] Cuando no hay scores, el leaderboard muestra "Sé el primero en entrar al salón de la fama".
 - [ ] `/hall-of-fame` muestra un tab para {{TITLE}}.
 - [ ] `npm run build` completa sin errores de TypeScript.
@@ -192,17 +190,11 @@ de `lib/supabase/types.ts`.
   genérica `[id]/play`. Razón: evita condicionales en la ruta genérica; Next.js App Router
   da prioridad a rutas estáticas sobre dinámicas.
 
-- **Sí: Un único spec combinado (juego + leaderboard)** — las tablas `games` y `scores` ya
-  existen; solo se añade la fila del juego y el wiring. Separarlos no aportaría valor visible.
+- **Sí: Un único spec combinado (juego + leaderboard)** — el catálogo y el store de scores ya
+  existen; solo se añade la entrada del juego y el wiring. Separarlos no aportaría valor visible.
 
-- **No: Crear tablas nuevas por juego** — se reutilizan `games` y `scores` del spec 06.
+- **No: Store de scores propio por juego** — se reutiliza `app/data/scores.ts`.
   Razón: el modelo es suficientemente genérico para cualquier juego con score numérico.
-
-- **No: RLS en este spec** — las tablas quedan abiertas (INSERT y SELECT públicos).
-  Razón: se mitiga en el spec futuro de seguridad.
-
-- **No: Realtime en leaderboards** — los scores se ven al recargar.
-  Razón: la complejidad de subscriptions no aporta valor mientras haya pocos jugadores activos.
 
 - **No: Componente genérico `CanvasGame`** — cada juego tiene su componente propio.
   Razón: YAGNI; generalizar ahora sería abstraer sin caso de uso suficientemente confirmado.
